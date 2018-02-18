@@ -1,4 +1,5 @@
 #This program computes all possible Pythagorean triplets from 0 to n (0 < a,b,c <= n)
+#TODO: program is wrong! just realized when testing the new one. 
 
 def find_pythag_triplets(limit):
 	result = ""
