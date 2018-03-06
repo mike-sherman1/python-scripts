@@ -9,4 +9,6 @@ A repository for the various programs I have written in Python
 - **pythagorean-triplets2.py**: Computes all Pythagorean triples from 0 to n (0 < a,b,c <= n) using 1 list comprehension
 - **reading-csv.py**: Reading and manipulating a csv file, without using pythons built in csv module
 
-TODO: add comments and error catching to most of them
+## TODO: 
+- first pythag is broken, algorithm is wrong
+- add comments and error catching to most of them
