@@ -1,5 +1,4 @@
 # assignment is to add humans and write docstrings and comments
-# nothing is outputted from this sample code, maybe try in IDE
 
 # Copyright 2017, 2013, 2011 Pearson Education, Inc., W.F. Punch & R.J.Enbody
 # Predator-Prey Simulation
@@ -44,7 +43,7 @@ class Island (object):
 				count += 1
 				self.register(new_predator)
 
-	# Animals have a moved flag to indicated they moved this turn. Clear that so we can do the next turn 
+	# Animals have a moved flag to indicated they moved this turn. Clear that so we can do the next turn
 	def clear_all_moved_flags(self):
 		for x in range(self.grid_size):
 			for y in range(self.grid_size):
@@ -84,7 +83,7 @@ class Island (object):
 					s+= "{:<2s}".format('.' + "  ")
 				else:
 					s+= "{:<2s}".format((str(self.grid[i][j])) + "  ")
-					s+="\n"
+			s+="\n"
 		return s
 
 	# count all the prey on the island
@@ -130,13 +129,12 @@ class Animal(object):
 	# of the specified type. Return 0 if no such location exists
 	def check_grid(self,type_looking_for=int):
 		# neighbor offsets
-		offset = [(-1,1),(0,1),(1,1),(-1,0),(1,0),(-1,-1),(0,-1),(1,-1)] 
+		offset = [(-1,1),(0,1),(1,1),(-1,0),(1,0),(-1,-1),(0,-1),(1,-1)]
 		result = 0
 		for i in range(len(offset)):
 			x = self.x + offset[i][0]  # neighboring coordinates
 			y = self.y + offset[i][1]
-			if not 0 <= x < self.island.size() or \
-			not 0 <= y < self.island.size():
+			if not 0 <= x < self.island.size() or not 0 <= y < self.island.size():
 				continue
 			if type(self.island.animal(x,y))==type_looking_for:
 				result=(x,y)
@@ -148,8 +146,7 @@ class Animal(object):
 		if not self.moved:
 			location = self.check_grid(int)
 			if location:
-				# print('Move, {}, from {},{} to {},{}'.format( \
-				#       type(self),self.x,self.y,location[0],location[1]))
+				# print('Move, {}, from {},{} to {},{}'.format(type(self),self.x,self.y,location[0],location[1]))
 				self.island.remove(self)   # remove from current spot
 				self.x = location[0]       # new coordinates
 				self.y = location[1]
@@ -187,15 +184,13 @@ class Predator(Animal):
 		Animal.__init__(self,island,x,y,s)
 		self.starve_clock = self.starve_time
 		self.breed_clock = self.breed_time
-		# print('Init Predator {},{}, starve:{}, breed:{}'.format( \
-		#       self.x,self.y,self.starve_clock,self.breed_clock))
+		# print('Init Predator {},{}, starve:{}, breed:{}'.format(self.x,self.y,self.starve_clock,self.breed_clock))
 
 	# Predator updates both breeding and starving
 	def clock_tick(self):
 		self.breed_clock -= 1
 		self.starve_clock -= 1
-		# print('Tick, Predator at {},{} starve:{}, breed:{}'.format( \
-		#       self.x,self.y,self.starve_clock,self.breed_clock))
+		# print('Tick, Predator at {},{} starve:{}, breed:{}'.format(self.x,self.y,self.starve_clock,self.breed_clock))
 		if self.starve_clock <= 0:
 			# print('Death, Predator at {},{}'.format(self.x,self.y))
 			self.island.remove(self)
@@ -205,16 +200,15 @@ class Predator(Animal):
 	def eat(self):
 		if not self.moved:
 			location = self.check_grid(Prey)
-		if location:
-			# print('Eating: pred at {},{}, prey at {},{}'.format( \
-			#       self.x,self.y,location[0],location[1]))
-			self.island.remove(self.island.animal(location[0],location[1]))
-			self.island.remove(self)
-			self.x=location[0]
-			self.y=location[1]
-			self.island.register(self)
-			self.starve_clock=self.starve_time
-			self.moved=True
+			if location:
+				# print('Eating: pred at {},{}, prey at {},{}'.format(self.x,self.y,location[0],location[1]))
+				self.island.remove(self.island.animal(location[0],location[1]))
+				self.island.remove(self)
+				self.x=location[0]
+				self.y=location[1]
+				self.island.register(self)
+				self.starve_clock=self.starve_time
+				self.moved=True
 
 # main simulation. Sets defaults, runs event loop, plots at the end
 def main(predator_breed_time=6, predator_starve_time=3, initial_predators=10, prey_breed_time=3, initial_prey=50, size=10, ticks=300):
@@ -231,7 +225,7 @@ def main(predator_breed_time=6, predator_starve_time=3, initial_predators=10, pr
 	isle = Island(size,initial_prey, initial_predators)
 	print(isle)
 
-	# event loop. 
+	# event loop.
 	# For all the ticks, for every x,y location.
 	# If there is an animal there, try eat, move, breed and clock_tick
 	for i in range(ticks):
@@ -262,11 +256,13 @@ def main(predator_breed_time=6, predator_starve_time=3, initial_predators=10, pr
 		if not i%10:
 			print(prey_count, predator_count)
 		# print the island, hold at the end of each cycle to get a look
-		#        print('*'*20)
-		#        print(isle)
-		#        ans = input("Return to continue")
-	
+		# print('*'*20)
+		# print(isle)
+		# ans = input("Return to continue")
+
 	pylab.plot(range(0,ticks), predator_list, label="Predators")
 	pylab.plot(range(0,ticks), prey_list, label="Prey")
 	pylab.legend(loc="best", shadow=True)
 	pylab.show()
+	
+main()
