@@ -5,12 +5,18 @@
 # If to == -1, the content between from and the end of the file will be returned. If parameter to exceeds the file length, 
 # then the function raises exception ValueError with a corresponding error message. 
 def ed_read(filename, sfrom=0, to=-1):
-	with open (filename, "r") as in_file:
-		contents = in_file.read()	
-	if to == -1:
-		to = None
-	contents = contents[sfrom:to]
-	return contents
+	try:
+		with open (filename, "r") as in_file:
+			contents = in_file.read()
+		if to >= len(contents):
+			raise ValueError("Upper bound exceeds file length, please check your input and try again.")
+		if to == -1:
+			to = None
+		contents = contents[sfrom:to]
+		return contents
+	except ValueError as e:
+		print("ERROR: " + str(e))
+		return None
 	
 # finds string search_str in the file named by filename and returns a list with index positions in the file text where the string 
 # search_str is located. E.g. it returns [4, 100] if the string was found at positions 4 and 100. 
@@ -34,19 +40,23 @@ def find_all(contents, search_str):
 # 1 means the second, etc. If the occurrence argument exceeds the actual occurrence index in the file of that string, 
 # the function does not do the replacement. The function returns the number of times the string was replaced. 
 def ed_replace(filename, search_str, replace_with, occurrence=-1):
-	count = 0
-	contents = ed_read(filename)
-	if occurrence == -1:
-		contents = contents.replace(search_str, replace_with)
-		count = len(list(find_all(contents, search_str)))
-	else:
-		indexes = list(find_all(contents, search_str))
-		i = indexes[occurrence]
-		# splits the string at desired index i, then replaces the first occurrence in the 2nd half of the string (which of course is index i)
-		contents = contents[:i] + contents[i:].replace(search_str, replace_with, 1)
-	with open (filename, "w") as out_file:
-		out_file.write(contents)
-	return count
+	try: 
+		count = 0
+		contents = ed_read(filename)
+		if occurrence == -1:
+			contents = contents.replace(search_str, replace_with)
+			count = len(list(find_all(contents, search_str)))
+		else:
+			indexes = list(find_all(contents, search_str))
+			i = indexes[occurrence]
+			# splits the string at desired index i, then replaces the first occurrence in the 2nd half of the string (which of course is index i)
+			contents = contents[:i] + contents[i:].replace(search_str, replace_with, 1)
+		with open (filename, "w") as out_file:
+			out_file.write(contents)
+	except IndexError:
+		print("ERROR: Occurrence index parameter invalid, please check your input and try again.")
+	finally:
+		return count
 	
 # appends string to the end of the file. If the file does not exist, a new file is created with the given file name. 
 # The function returns the number of characters written to the file.
@@ -60,44 +70,60 @@ def ed_append(filename, string):
 # the file contents size, the function does not change the file and raises ValueError with a proper error message. 
 # In case of no errors, the function returns the number of strings written to the file. Assume the strings to be written do not overlap.
 def ed_write(filename, pos_str_col):
-	count = 0
-	contents = ed_read(filename)
-	# x[0] = index to start overwrite
-	# x[1] = string
-	for x in pos_str_col:
-		contents = contents[:x[0]] + x[1] + contents[x[0]+len(x[1]):]
-		count += 1
-	with open (filename, "w") as out_file:
-		out_file.write(contents)
-	return count
+	try: 
+		count = 0
+		contents = ed_read(filename)
+		# x[0] = index to start overwrite
+		# x[1] = string
+		for x in pos_str_col:
+			if x[0] < 0 or x[0] >= len(contents):
+				raise ValueError("One or more positional parameter(s) are invalid, please check your input and try again. ")
+			contents = contents[:x[0]] + x[1] + contents[x[0]+len(x[1]):]
+			count += 1
+		with open (filename, "w") as out_file:
+			out_file.write(contents)
+		return count
+	except ValueError as e:
+		print("ERROR: " + str(e))
+		return None
 
 # for each tuple (position, s) in collection pos_str_col (e.g. a list) this function inserts into to the file content the string s 
 # at position pos. This function does not overwrite the existing file content, as seen in the examples below. If any 
 # position parameters is invalid (< 0) or greater than the original file content length, the function does not change the file at 
 # all and raises ValueError with a proper error message. In case of no errors, the function returns the number of strings inserted to the file.
 def ed_insert(filename, pos_str_col):
-	count = 0
-	contents = ed_read(filename)
-	# x[0] = index to start write
-	# x[1] = string
-	for x in pos_str_col:
-		contents = contents[:x[0]] + x[1] + contents[x[0]:]
-		count += 1
-	with open (filename, "w") as out_file:
-		out_file.write(contents)
-	return count
+	try:
+		count = 0
+		contents = ed_read(filename)
+		# x[0] = index to start write
+		# x[1] = string
+		for x in pos_str_col:
+			if x[0] < 0 or x[0] >= len(contents):
+				raise ValueError("One or more positional parameter(s) are invalid, please check your input and try again. ")
+			contents = contents[:x[0]] + x[1] + contents[x[0]:]
+			count += 1
+		with open (filename, "w") as out_file:
+			out_file.write(contents)
+		return count
+	except ValueError as e:
+		print("ERROR: " + str(e))
+		return None
 	
-# example code
-fn = "file1.txt" # assume this file does not exist yet.
-ed_append(fn, "0123456789") # this will create a new file
-ed_append(fn, "0123456789") # the file content is: 01234567890123456789
+# my testing
+fn = "file1.txt"
+ed_replace(fn, "345", "ABCDE", 100)
+	
+# prompt example code
+# fn = "file1.txt" # assume this file does not exist yet.
+# ed_append(fn, "0123456789") # this will create a new file
+# ed_append(fn, "0123456789") # the file content is: 01234567890123456789
 
-print(ed_read(fn, 3, 9)) # prints 345678. Notice that the interval excludes index to (9)
-print(ed_read(fn, 3)) # prints from 3 to the end of the file: 34567890123456789
+# print(ed_read(fn, 3, 9)) # prints 345678. Notice that the interval excludes index to (9)
+# print(ed_read(fn, 3)) # prints from 3 to the end of the file: 34567890123456789
 
-lst = ed_find(fn, "345")
-print(lst) # prints [3, 13]
-print(ed_find(fn, "356")) # prints []
+# lst = ed_find(fn, "345")
+# print(lst) # prints [3, 13]
+# print(ed_find(fn, "356")) # prints []
 
 # ed_replace(fn, "345", "ABCDE", 1) # changes the file to 0123456789012ABCDE6789
 
@@ -114,4 +140,4 @@ print(ed_find(fn, "356")) # prints []
 
 # assume we reset the file content to 01234567890123456789 (not shown)
 # this function inserts new text, without overwriting:
-ed_insert(fn, ((2, "ABC"), (10, "DEFG"))) # changed file to: 01ABC23456789DEFG0123456789
+# ed_insert(fn, ((2, "ABC"), (10, "DEFG"))) # changed file to: 01ABC23456789DEFG0123456789
