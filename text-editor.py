@@ -1,10 +1,14 @@
 # non-interactive text editor
-# everything done, just needs error catching and docstrings
 
-# returns as a string the content of the file named filename, with file positions in the half-open range [from, to).
-# If to == -1, the content between from and the end of the file will be returned. If parameter to exceeds the file length, 
-# then the function raises exception ValueError with a corresponding error message. 
+import os
+
 def ed_read(filename, sfrom=0, to=-1):
+	"""Function for reading a file.
+	
+	param filename: name of file to be read
+	param sfrom: starting position
+	param to: ending position
+	"""
 	try:
 		with open (filename, "r") as in_file:
 			contents = in_file.read()
@@ -18,15 +22,21 @@ def ed_read(filename, sfrom=0, to=-1):
 		print("ERROR: " + str(e))
 		return None
 	
-# finds string search_str in the file named by filename and returns a list with index positions in the file text where the string 
-# search_str is located. E.g. it returns [4, 100] if the string was found at positions 4 and 100. 
-# It returns [] if the string was not found.
 def ed_find(filename, search_str):
+	"""Function for finding occurrences of a substring in the file.
+	
+	param filename: name of file to be searched
+	param search_str: the string to be searched for
+	"""
 	contents = ed_read(filename)
 	return list(find_all(contents, search_str))
 	
-# helper function to find substrings
 def find_all(contents, search_str):
+	"""Helper function to find substrings.
+	
+	param contents: contents of the file
+	param search_str: string to be searched for
+	"""
 	start = 0
 	while True:
 		start = contents.find(search_str, start)
@@ -35,11 +45,14 @@ def find_all(contents, search_str):
 		yield start
 		start += 1
 	
-# replaces search_str in the file named by filename with string replace_with. If occurrence==-1, then it replaces ALL occurrences.
-# If occurrence>=0, then it replaces only the occurrence with index occurrence, where 0 means the first,
-# 1 means the second, etc. If the occurrence argument exceeds the actual occurrence index in the file of that string, 
-# the function does not do the replacement. The function returns the number of times the string was replaced. 
 def ed_replace(filename, search_str, replace_with, occurrence=-1):
+	"""Function for replacing substrings in the file.
+	
+	param filename: name of file to be edited
+	param search_str: the string to be replaced
+	param replace_with: the string to replace the search string with
+	param occurrence: which occurrence of search string to be overwritten(-1 overwrites all occurrences)
+	"""
 	try: 
 		count = 0
 		contents = ed_read(filename)
@@ -58,18 +71,22 @@ def ed_replace(filename, search_str, replace_with, occurrence=-1):
 	finally:
 		return count
 	
-# appends string to the end of the file. If the file does not exist, a new file is created with the given file name. 
-# The function returns the number of characters written to the file.
 def ed_append(filename, string):
+	"""Function for appending to the file.
+	
+	param filename: name of file to be edited
+	param string: the string to be appended
+	"""
 	with open (filename, "a") as out_file:
 		out_file.write(string)
 	return len(string)
 
-# for each tuple (position, s) in collection pos_str_col (e.g. a list) this function writes to the file at position pos the string s.
-# This function overwrites some of the existing file content. If any position parameter is invalid (< 0) or greater than 
-# the file contents size, the function does not change the file and raises ValueError with a proper error message. 
-# In case of no errors, the function returns the number of strings written to the file. Assume the strings to be written do not overlap.
 def ed_write(filename, pos_str_col):
+	"""Function for overwriting strings at specific positions in the file.
+	
+	param filename: name of file to be edited
+	param pos_str_col: a collection of tuples (position, string)
+	"""
 	try: 
 		count = 0
 		contents = ed_read(filename)
@@ -87,11 +104,12 @@ def ed_write(filename, pos_str_col):
 		print("ERROR: " + str(e))
 		return None
 
-# for each tuple (position, s) in collection pos_str_col (e.g. a list) this function inserts into to the file content the string s 
-# at position pos. This function does not overwrite the existing file content, as seen in the examples below. If any 
-# position parameters is invalid (< 0) or greater than the original file content length, the function does not change the file at 
-# all and raises ValueError with a proper error message. In case of no errors, the function returns the number of strings inserted to the file.
 def ed_insert(filename, pos_str_col):
+	"""Function for inserting strings at specific positions without overwriting the file.
+	
+	param filename: name of file to be inserted into
+	param pos_str_col: a collection of tuples (position, string)
+	"""
 	try:
 		count = 0
 		contents = ed_read(filename)
@@ -109,35 +127,78 @@ def ed_insert(filename, pos_str_col):
 		print("ERROR: " + str(e))
 		return None
 	
-# my testing
-fn = "file1.txt"
-ed_replace(fn, "345", "ABCDE", 100)
+def testif(b, testname, msgOK="", msgFailed=""):
+	"""Function used for testing. 
+    
+	param b: boolean, normally a tested condition: true if test passed, false otherwise
+    param testname: the test name
+    param msgOK: string to be printed if param b==True  ( test condition true)
+    param msgFailed: string to be printed if param b==False
+    returns b
+    """
+	if b:
+		print("Success: "+ testname + "; " + msgOK)
+	else:
+		print("Failed: "+ testname + "; " + msgFailed)
+	return b
+
+def test_ed_write():
+	"""Function for testing ed_write."""
+	fn = "test.txt"
+	if os.path.isfile(fn):
+		os.remove(fn)
+		
+	# initial write
+	ed_append(fn, "mike sherman is the best")
 	
-# prompt example code
-# fn = "file1.txt" # assume this file does not exist yet.
-# ed_append(fn, "0123456789") # this will create a new file
-# ed_append(fn, "0123456789") # the file content is: 01234567890123456789
+	# test
+	ed_write(fn, [(0, "matt"), (5, "bailey ")])
+	testif(ed_read(fn) == "matt bailey  is the best", "TEST ED_WRITE")
+	
+def test_ed_replace():
+	"""Function for testing ed_replace."""
+	fn = "test.txt"
+	if os.path.isfile(fn):
+		os.remove(fn)
+		
+	# initial write
+	ed_append(fn, "mike sherman is the best")
+	
+	# test
+	ed_replace(fn, "mike", "matt", occurrence=-1)
+	ed_replace(fn, "sherman", "bailey ", occurrence=-1)
+	testif(ed_read(fn) == "matt bailey  is the best", "TEST ED_REPLACE")
+	
+# some examples that show how to use all the editor functions
+def main():	
+	fn = "file1.txt" # assume this file does not exist yet.
+	os.remove(fn)
+	ed_append(fn, "0123456789") # this will create a new file
+	ed_append(fn, "0123456789") # the file content is: 01234567890123456789
 
-# print(ed_read(fn, 3, 9)) # prints 345678. Notice that the interval excludes index to (9)
-# print(ed_read(fn, 3)) # prints from 3 to the end of the file: 34567890123456789
+	print(ed_read(fn, 3, 9)) # prints 345678. Notice that the interval excludes index to (9)
+	print(ed_read(fn, 3)) # prints from 3 to the end of the file: 34567890123456789
 
-# lst = ed_find(fn, "345")
-# print(lst) # prints [3, 13]
-# print(ed_find(fn, "356")) # prints []
+	lst = ed_find(fn, "345")
+	print(lst) # prints [3, 13]
+	print(ed_find(fn, "356")) # prints []
 
-# ed_replace(fn, "345", "ABCDE", 1) # changes the file to 0123456789012ABCDE6789
+	ed_replace(fn, "345", "ABCDE", 1) # changes the file to 0123456789012ABCDE6789
 
-# assume we reset the file content to 01234567890123456789  (not shown)
-# ed_replace(fn, "345", "ABCDE") # changes the file to 012ABCDE6789012ABCDE6789
+	# reset the file content to 01234567890123456789 
+	os.remove(fn)
+	ed_append(fn, "01234567890123456789") 
+	ed_replace(fn, "345", "ABCDE") # changes the file to 012ABCDE6789012ABCDE6789
 
-# assume we reset the file content to 01234567890123456789 (not shown)
-# this function overwrites original content:
-# ed_write(fn, ((2, "ABC"), (10, "DEFG"))) # changes file to: 01ABC56789DEFG456789
-# ed_write(fn, [(2, "ABC"), (10, "DEFG")]) # changes file to: 01ABC56789DEFG456789 (list)
+	# reset the file content to 01234567890123456789 
+	os.remove(fn)
+	ed_append(fn, "01234567890123456789") 
+	# this function overwrites original content:
+	ed_write(fn, ((2, "ABC"), (10, "DEFG"))) # changes file to: 01ABC56789DEFG456789
+	ed_write(fn, [(2, "ABC"), (10, "DEFG")]) # changes file to: 01ABC56789DEFG456789 (list)
 
-# assume we reset the file content to 01234567890123456789 (not shown)
-# ed_write(fn, ((2, "ABC"), (30,"DEFG"))) # fails. raises ValueError("invalid position 30")
-
-# assume we reset the file content to 01234567890123456789 (not shown)
-# this function inserts new text, without overwriting:
-# ed_insert(fn, ((2, "ABC"), (10, "DEFG"))) # changed file to: 01ABC23456789DEFG0123456789
+	# reset the file content to 01234567890123456789 
+	os.remove(fn)
+	ed_append(fn, "01234567890123456789") 
+	# this function inserts new text, without overwriting:
+	ed_insert(fn, ((2, "ABC"), (10, "DEFG"))) # changed file to: 01ABC23456789DEFG0123456789
