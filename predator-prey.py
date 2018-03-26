@@ -1,4 +1,4 @@
-# assignment is to add humans and write docstrings and comments
+# everything working correctly, just need good parameters and docstrings / comments
 
 # Copyright 2017, 2013, 2011 Pearson Education, Inc., W.F. Punch & R.J.Enbody
 # Predator-Prey Simulation
@@ -13,17 +13,17 @@ import pylab
 #Island is n X n grid where zero value indicates not occupied
 class Island (object):
 	# Initialize grid to all 0's, then fill with animals
-	def __init__(self, n, prey_count=0, predator_count=0):
+	def __init__(self, n, prey_count=0, predator_count=0, human_count=0):
 		# print(n,prey_count,predator_count)
 		self.grid_size = n
 		self.grid = []
 		for i in range(n):
 			row = [0]*n    # row is a list of n zeros
 			self.grid.append(row)
-		self.init_animals(prey_count,predator_count)
+		self.init_animals(prey_count,predator_count,human_count)
 
 	# Put some initial animals on the island
-	def init_animals(self,prey_count, predator_count):
+	def init_animals(self,prey_count,predator_count,human_count):
 		count = 0
 		# while loop continues until prey_count unoccupied positions are found
 		while count < prey_count:
@@ -42,7 +42,16 @@ class Island (object):
 				new_predator=Predator(island=self,x=x,y=y)
 				count += 1
 				self.register(new_predator)
-
+		count = 0
+		# same while loop but for human_count
+		while count < human_count:
+			x = random.randint(0,self.grid_size-1)
+			y = random.randint(0,self.grid_size-1)
+			if not self.animal(x,y):
+				new_human=Human(island=self,x=x,y=y)
+				count += 1
+				self.register(new_human)
+		
 	# Animals have a moved flag to indicated they moved this turn. Clear that so we can do the next turn
 	def clear_all_moved_flags(self):
 		for x in range(self.grid_size):
@@ -93,7 +102,7 @@ class Island (object):
 			for y in range(self.grid_size):
 				animal = self.animal(x,y)
 				if animal:
-					if isinstance(animal,Prey):
+					if type(animal) == Prey:
 						count+=1
 		return count
 
@@ -104,7 +113,18 @@ class Island (object):
 			for y in range(self.grid_size):
 				animal = self.animal(x,y)
 				if animal:
-					if isinstance(animal,Predator):
+					if type(animal) == Predator:
+						count+=1
+		return count
+		
+	# count all the humans on the island
+	def count_humans(self):
+		count = 0
+		for x in range(self.grid_size):
+			for y in range(self.grid_size):
+				animal = self.animal(x,y)
+				if animal:
+					if type(animal) == Human:
 						count+=1
 		return count
 
@@ -154,13 +174,13 @@ class Animal(object):
 				self.moved=True
 
 	# Breed a new Animal.If there is room in one of the 8 locations
-	# place the new Prey there. Otherwise you have to wait.
+	# place the new Animal there. Otherwise you have to wait.
 	def breed(self):
 		if self.breed_clock <= 0:
 			location = self.check_grid(int)
 			if location:
+				# print('Breeding Animal {},{}'.format(self.x,self.y))
 				self.breed_clock = self.breed_time
-				# print('Breeding Prey {},{}'.format(self.x,self.y))
 				the_class = self.__class__
 				new_animal = the_class(self.island,x=location[0],y=location[1])
 				self.island.register(new_animal)
@@ -209,21 +229,70 @@ class Predator(Animal):
 				self.island.register(self)
 				self.starve_clock=self.starve_time
 				self.moved=True
+				
+class Human(Predator):
+	def __init__(self, island, x=0,y=0,s="H"):
+		Predator.__init__(self,island,x,y,s)
+		self.starve_clock = self.starve_time
+		self.breed_clock = self.breed_time
+		self.hunt_clock = self.hunt_time
+		# print('Init Human {},{}, starve:{}, breed:{}, hunt:{}'.format(self.x,self.y,self.starve_clock,self.breed_clock,self.hunt_clock))
+		
+	# Human updates breeding, starving, and hunting
+	def clock_tick(self):
+		self.breed_clock -= 1
+		self.starve_clock -= 1
+		self.hunt_clock -= 1
+		# print('Tick, Human at {},{} starve:{}, breed:{}, hunt:{}'.format(self.x,self.y,self.starve_clock,self.breed_clock,self.hunt_clock))
+		if self.starve_clock <= 0:
+			# print('Death, Human at {},{}'.format(self.x,self.y))
+			self.island.remove(self)
+
+	# Human looks for one of the 8 locations with Predator. If found moves to that location, 
+	# updates the hunt clock, removes the Predator
+	def hunt(self):
+		if self.hunt_clock <= 0:
+			if not self.moved:
+				location = self.check_grid(Predator)
+				if location:
+					# print('Hunting: human at {},{}, predator at {},{}'.format(self.x,self.y,location[0],location[1]))
+					self.island.remove(self.island.animal(location[0],location[1]))
+					self.island.remove(self)
+					self.x=location[0]
+					self.y=location[1]
+					self.island.register(self)
+					self.hunt_clock=self.hunt_time
+					self.moved=True
 
 # main simulation. Sets defaults, runs event loop, plots at the end
-def main(predator_breed_time=6, predator_starve_time=3, initial_predators=10, prey_breed_time=3, initial_prey=50, size=10, ticks=300):
+# book defaults: (predator_breed_time=6, predator_starve_time=3, initial_predators=10, prey_breed_time=3, initial_prey=50, size=10, ticks=300)
+def main(human_breed_time=6, human_starve_time=3, human_hunt_time=7, initial_humans=20, predator_breed_time=6, predator_starve_time=3, initial_predators=10, prey_breed_time=3, initial_prey=50, size=10, ticks=300):
 	# initialization values
 	Predator.breed_time = predator_breed_time
 	Predator.starve_time = predator_starve_time
 	Prey.breed_time = prey_breed_time
+	Human.breed_time = human_breed_time
+	Human.starve_time = human_starve_time
+	Human.hunt_time = human_hunt_time
 
 	# for graphing
 	predator_list=[]
 	prey_list=[]
+	human_list=[]
 
 	# make an island
-	isle = Island(size,initial_prey, initial_predators)
+	isle = Island(size,initial_prey, initial_predators, initial_humans)
 	print(isle)
+	print(initial_prey, initial_predators, initial_humans)
+	
+	# test
+	# a = Animal(isle)
+	# x = Predator(isle)
+	# o = Prey(isle)
+	# h = Human(isle)
+	# print(isinstance(h,Predator))
+	# print(type(h))
+	# print(type(x))
 
 	# event loop.
 	# For all the ticks, for every x,y location.
@@ -237,6 +306,8 @@ def main(predator_breed_time=6, predator_starve_time=3, initial_predators=10, pr
 				if animal:
 					if isinstance(animal,Predator):
 						animal.eat()
+					if isinstance(animal,Human):
+						animal.hunt()
 					animal.move()
 					animal.breed()
 					animal.clock_tick()
@@ -244,25 +315,30 @@ def main(predator_breed_time=6, predator_starve_time=3, initial_predators=10, pr
 		# record info for display, plotting
 		prey_count = isle.count_prey()
 		predator_count = isle.count_predators()
+		human_count = isle.count_humans()
 		if prey_count == 0:
 			print('Lost the Prey population. Quiting.')
 			break
-		if predator_count == 0:
-			print('Lost the Predator population. Quitting.')
-			break
+		# if predator_count == 0:
+			# print('Lost the Predator population. Quitting.')
+			# break
 		prey_list.append(prey_count)
 		predator_list.append(predator_count)
+		human_list.append(human_count)
 		# print out every 10th cycle, see what's going on
 		if not i%10:
-			print(prey_count, predator_count)
+			print(prey_count, predator_count, human_count)
 		# print the island, hold at the end of each cycle to get a look
 		# print('*'*20)
 		# print(isle)
 		# ans = input("Return to continue")
 
+	print(isle)
 	pylab.plot(range(0,ticks), predator_list, label="Predators")
 	pylab.plot(range(0,ticks), prey_list, label="Prey")
+	pylab.plot(range(0,ticks), human_list, label="Humans")
 	pylab.legend(loc="best", shadow=True)
 	pylab.show()
 	
 main()
+
